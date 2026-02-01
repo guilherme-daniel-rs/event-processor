@@ -1,0 +1,19 @@
+# Terraform
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.*
+**/terraform-provider-*
+**/*.lock.*
+
+# LocalStack
+.localstack/
+volume/cache/
+machine.json
+server.test.pem*
+server.test.pem.crt
+server.test.pem.key
+
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/

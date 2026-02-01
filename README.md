@@ -54,3 +54,22 @@ go run main.go
 ```bash
 go test ./...
 ```
+
+### Run Environmnent
+
+```bash
+brew install localstack/tap/localstack-cli
+
+docker-compose up -d
+
+pip install terraform-local
+
+brew tap hashicorp/tap
+brew install hashicorp/tap/terraform
+
+cd infra/terraform
+
+tflocal init
+
+tflocal apply
+```
