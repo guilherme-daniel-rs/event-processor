@@ -4,6 +4,7 @@ import (
 	"context"
 	"maps"
 	"strconv"
+	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -72,6 +73,43 @@ func (c *Consumer) Nack(ctx context.Context, msg ports.Message, opts ports.NackO
 		VisibilityTimeout: opts.DelayBeforeRetrySeconds,
 	})
 	return err
+}
+
+func (c *Consumer) Read(ctx context.Context, process func(ctx context.Context, msg ports.Message) error) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		messages, err := c.Receive(ctx)
+		if err != nil {
+			continue
+		}
+
+		var wg sync.WaitGroup
+		for _, msg := range messages {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
+			wg.Add(1)
+			go func(m ports.Message) {
+				defer wg.Done()
+
+				if err := process(ctx, m); err != nil {
+					_ = c.Nack(ctx, m, ports.NackOptions{
+						DelayBeforeRetrySeconds: 30,
+					})
+				} else {
+					_ = c.Ack(ctx, m)
+				}
+			}(msg)
+		}
+		wg.Wait()
+
+	}
 }
 
 func toPortsMessage(m types.Message) ports.Message {
