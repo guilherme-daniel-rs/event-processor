@@ -17,3 +17,9 @@ server.test.pem.key
 .DS_Store
 .vscode/
 .idea/
+
+# Env
+.env
+.env.local
+.env.*.local
+.env-*
