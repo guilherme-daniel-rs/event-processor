@@ -8,30 +8,14 @@ import (
 )
 
 type Processor struct {
-	consumer ports.Consumer
 }
 
-func NewProcessor(consumer ports.Consumer) *Processor {
-	return &Processor{
-		consumer: consumer,
-	}
+func NewProcessor() *Processor {
+	return &Processor{}
 }
 
-func (p *Processor) Run(ctx context.Context) error {
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			messages, err := p.consumer.Receive(ctx)
-			if err != nil {
-				fmt.Println("receive failed:", err)
-				continue
-			}
+func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
+	fmt.Println("Processing message", msg)
 
-			for _, msg := range messages {
-				fmt.Println("Processing message ID:", msg.ID)
-			}
-		}
-	}
+	return nil
 }

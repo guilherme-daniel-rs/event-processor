@@ -10,12 +10,6 @@ type Message struct {
 	ReceiveCount int
 }
 
-type NackOptions struct {
-	DelayBeforeRetrySeconds int32
-}
-
 type Consumer interface {
-	Receive(ctx context.Context) ([]Message, error)
-	Ack(ctx context.Context, msg Message) error
-	Nack(ctx context.Context, msg Message, opts NackOptions) error
+	Read(ctx context.Context, process func(ctx context.Context, msg Message) error) error
 }

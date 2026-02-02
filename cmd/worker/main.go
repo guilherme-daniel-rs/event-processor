@@ -43,17 +43,18 @@ func main() {
 		WaitTimeSec: config.Get().SQS.WaitTimeSec,
 	})
 
-	processor := app.NewProcessor(sqsConsumer)
+	processor := app.NewProcessor()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		if err := processor.Run(ctx); err != nil {
-			fmt.Println("Processor stopped with error:", err)
+		if err := sqsConsumer.Read(ctx, processor.Process); err != nil {
+			log.Fatalf("Consumer stopped with error: %v", err)
 		}
 	}()
 
-	wg.Wait()
 	fmt.Println("Worker service is running...")
+
+	wg.Wait()
 }

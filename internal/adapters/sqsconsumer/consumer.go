@@ -25,6 +25,10 @@ type Options struct {
 	WaitTimeSec int32
 }
 
+type nackOptions struct {
+	DelayBeforeRetrySeconds int32
+}
+
 func NewSqsConsumer(client *sqs.Client, opts Options) *Consumer {
 	return &Consumer{
 		client:      client,
@@ -63,7 +67,7 @@ func (c *Consumer) Ack(ctx context.Context, msg ports.Message) error {
 	return err
 }
 
-func (c *Consumer) Nack(ctx context.Context, msg ports.Message, opts ports.NackOptions) error {
+func (c *Consumer) Nack(ctx context.Context, msg ports.Message, opts nackOptions) error {
 	if opts.DelayBeforeRetrySeconds <= 0 {
 		return nil
 	}
@@ -99,7 +103,7 @@ func (c *Consumer) Read(ctx context.Context, process func(ctx context.Context, m
 				defer wg.Done()
 
 				if err := process(ctx, m); err != nil {
-					_ = c.Nack(ctx, m, ports.NackOptions{
+					_ = c.Nack(ctx, m, nackOptions{
 						DelayBeforeRetrySeconds: 30,
 					})
 				} else {
