@@ -5,14 +5,18 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/guilherme-daniel-rs/event-processor/internal/domain/events"
 	"github.com/guilherme-daniel-rs/event-processor/internal/ports"
 )
 
 type Processor struct {
+	schemaRegistry *events.SchemaRegistry
 }
 
 func NewProcessor() *Processor {
-	return &Processor{}
+	return &Processor{
+		schemaRegistry: events.NewSchemaRegistry(),
+	}
 }
 
 type MessageHeader struct {
@@ -36,16 +40,18 @@ func (m MessageHeader) IsValid() bool {
 }
 
 func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
-	fmt.Println("Processing message")
-
-	payload := MessageHeader{}
-	err := json.Unmarshal(msg.Body, &payload)
-	if err != nil {
-		return err
+	var header MessageHeader
+	if err := json.Unmarshal(msg.Body, &header); err != nil {
+		return fmt.Errorf("failed to unmarshal message header: %w", err)
 	}
 
-	if !payload.IsValid() {
+	if !header.IsValid() {
 		return fmt.Errorf("invalid message header")
+	}
+
+	_, err := p.schemaRegistry.Unmarshal(header.EventType, header.SchemaVersion, header.Body)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal event body: %w", err)
 	}
 
 	return nil
