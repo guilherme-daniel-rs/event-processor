@@ -2,6 +2,7 @@ package sqsconsumer
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"strconv"
 	"sync"
@@ -103,6 +104,7 @@ func (c *Consumer) Read(ctx context.Context, process func(ctx context.Context, m
 				defer wg.Done()
 
 				if err := process(ctx, m); err != nil {
+					fmt.Println("Error processing message ID ", m.ID, ": ", err.Error())
 					_ = c.Nack(ctx, m, nackOptions{
 						DelayBeforeRetrySeconds: 30,
 					})
