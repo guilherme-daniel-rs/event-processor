@@ -9,10 +9,10 @@ import (
 )
 
 type EventRepository struct {
-	client *dynamodb.Client
+	client DynamoDBClient
 }
 
-func NewEventRepository(client *dynamodb.Client) *EventRepository {
+func NewEventRepository(client DynamoDBClient) *EventRepository {
 	return &EventRepository{
 		client: client,
 	}

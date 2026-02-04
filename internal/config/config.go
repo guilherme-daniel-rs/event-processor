@@ -9,10 +9,11 @@ import (
 var configuration *Config
 
 type Config struct {
-	AppName string    `mapstructure:"APP_NAME"`
-	Port    int       `mapstructure:"PORT" default:"8080"`
-	AWS     awsConfig `mapstructure:",squash"`
-	SQS     sqsConfig `mapstructure:",squash"`
+	AppName  string         `mapstructure:"APP_NAME"`
+	Port     int            `mapstructure:"PORT" default:"8080"`
+	AWS      awsConfig      `mapstructure:",squash"`
+	SQS      sqsConfig      `mapstructure:",squash"`
+	DynamoDB dynamoDBConfig `mapstructure:",squash"`
 }
 
 type awsConfig struct {
@@ -26,6 +27,10 @@ type sqsConfig struct {
 	QueueURL    string `mapstructure:"SQS_QUEUE_URL" default:"http://localhost:4566/000000000000/events-main"`
 	MaxMessages int32  `mapstructure:"SQS_MAX_MESSAGES" default:"5"`
 	WaitTimeSec int32  `mapstructure:"SQS_WAIT_TIME_SEC" default:"10"`
+}
+
+type dynamoDBConfig struct {
+	TableName string `mapstructure:"EVENTS_TABLE" default:"events"`
 }
 
 func setDefaultValues(configStruct reflect.Type) {

@@ -14,7 +14,7 @@ import (
 )
 
 type Consumer struct {
-	client      *sqs.Client
+	client      SQSClient
 	queueURL    string
 	maxMessages int32
 	waitTimeSec int32
@@ -30,7 +30,7 @@ type nackOptions struct {
 	DelayBeforeRetrySeconds int32
 }
 
-func NewSqsConsumer(client *sqs.Client, opts Options) *Consumer {
+func NewSqsConsumer(client SQSClient, opts Options) *Consumer {
 	return &Consumer{
 		client:      client,
 		queueURL:    opts.QueueURL,

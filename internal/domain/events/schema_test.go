@@ -174,6 +174,16 @@ func TestOrderPlacedV1_Validate(t *testing.T) {
 			event:   events.OrderPlacedV1{OrderID: gofakeit.UUID(), UserID: gofakeit.UUID(), Total: 100, ItemsCount: 0, Status: "PENDING"},
 			wantErr: true,
 		},
+		{
+			name:    "missing user_id",
+			event:   events.OrderPlacedV1{OrderID: gofakeit.UUID(), Total: 100, ItemsCount: 1, Status: "PENDING"},
+			wantErr: true,
+		},
+		{
+			name:    "missing status",
+			event:   events.OrderPlacedV1{OrderID: gofakeit.UUID(), UserID: gofakeit.UUID(), Total: 100, ItemsCount: 1},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -213,6 +223,21 @@ func TestPaymentProcessedV1_Validate(t *testing.T) {
 		{
 			name:    "invalid amount",
 			event:   events.PaymentProcessedV1{PaymentID: gofakeit.UUID(), OrderID: gofakeit.UUID(), Amount: 0, PaymentMethod: "CREDIT_CARD", Status: "SUCCESS"},
+			wantErr: true,
+		},
+		{
+			name:    "missing order_id",
+			event:   events.PaymentProcessedV1{PaymentID: gofakeit.UUID(), Amount: 100, PaymentMethod: "CREDIT_CARD", Status: "SUCCESS"},
+			wantErr: true,
+		},
+		{
+			name:    "missing payment_method",
+			event:   events.PaymentProcessedV1{PaymentID: gofakeit.UUID(), OrderID: gofakeit.UUID(), Amount: 100, Status: "SUCCESS"},
+			wantErr: true,
+		},
+		{
+			name:    "missing status",
+			event:   events.PaymentProcessedV1{PaymentID: gofakeit.UUID(), OrderID: gofakeit.UUID(), Amount: 100, PaymentMethod: "CREDIT_CARD"},
 			wantErr: true,
 		},
 	}
