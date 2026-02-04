@@ -1,3 +1,4 @@
+.PHONY: build test coverage run send-events
 
 APP_NAME = event-processor
 TEST_DIR = ./internal/...
@@ -19,7 +20,7 @@ test:
 	$(GOTEST) $(TEST_DIR)
 
 coverage:
-	mkdir $(COVERAGE_DIR) -p && $(GOTEST) -v $(TEST_DIR) -coverprofile=$(COVERAGE_DIR)/$(COVERAGE_FILE) && $(GOCOVER) -html=$(COVERAGE_DIR)/$(COVERAGE_FILE)
+	mkdir -p $(COVERAGE_DIR) && $(GOTEST) -v $(TEST_DIR) -coverprofile=$(COVERAGE_DIR)/$(COVERAGE_FILE) && $(GOCOVER) -html=$(COVERAGE_DIR)/$(COVERAGE_FILE)
 
 run:
 	@echo "Starting worker service..."
