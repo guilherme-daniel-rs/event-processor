@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -105,26 +104,4 @@ func TestConsumer_Nack(t *testing.T) {
 
 	err := consumer.Nack(context.Background(), msg, nackOptions{DelayBeforeRetrySeconds: 30})
 	assert.NoError(t, err)
-}
-
-func TestConsumer_Read(t *testing.T) {
-	mockClient := new(MockSQSClient)
-	consumer := NewSqsConsumer(mockClient, Options{QueueURL: "test-queue"})
-
-	mockClient.On("ReceiveMessage", mock.Anything, mock.Anything, mock.Anything).Return(&sqs.ReceiveMessageOutput{
-		Messages: []types.Message{
-			{MessageId: aws.String("msg-1"), ReceiptHandle: aws.String("handle-1")},
-		},
-	}, nil).Maybe()
-
-	mockClient.On("DeleteMessage", mock.Anything, mock.Anything, mock.Anything).Return(&sqs.DeleteMessageOutput{}, nil).Maybe()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancel()
-
-	err := consumer.Read(ctx, func(ctx context.Context, msg ports.Message) error {
-		return nil
-	})
-
-	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }

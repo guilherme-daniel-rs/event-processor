@@ -103,19 +103,50 @@ func (c *Consumer) Read(ctx context.Context, process func(ctx context.Context, m
 			go func(m ports.Message) {
 				defer wg.Done()
 
-				if err := process(ctx, m); err != nil {
-					fmt.Println("Error processing message ID ", m.ID, ": ", err.Error())
-					_ = c.Nack(ctx, m, nackOptions{
-						DelayBeforeRetrySeconds: 30,
-					})
-				} else {
+				if err := process(ctx, m); err == nil {
 					_ = c.Ack(ctx, m)
+					return
 				}
+
+				fmt.Printf("Error processing message ID %s: %v\n", m.ID, err)
+
+				if ports.IsNonRetriable(err) {
+					fmt.Printf("Message ID %s is non-retriable, acknowledging.\n", m.ID)
+					_ = c.Ack(ctx, m)
+					return
+				}
+
+				delay := calculateBackoffDelay(int32(m.ReceiveCount))
+
+				fmt.Printf("Retrying message ID %s in %d seconds (attempt %d)\n", m.ID, delay, m.ReceiveCount)
+				_ = c.Nack(ctx, m, nackOptions{
+					DelayBeforeRetrySeconds: delay,
+				})
 			}(msg)
 		}
 		wg.Wait()
 
 	}
+}
+
+func calculateBackoffDelay(receiveCount int32) int32 {
+	const maxAttempts = int32(10)
+
+	delay := int32(30)
+
+	attempt := receiveCount - 1
+	if attempt < 0 {
+		attempt = 0
+	}
+	if attempt > maxAttempts {
+		attempt = maxAttempts
+	}
+
+	for i := int32(0); i < attempt; i++ {
+		delay *= 2
+	}
+
+	return delay
 }
 
 func toPortsMessage(m types.Message) ports.Message {

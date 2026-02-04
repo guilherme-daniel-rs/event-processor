@@ -46,7 +46,7 @@ func (m MessageHeader) IsValid() bool {
 func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
 	var header MessageHeader
 	if err := json.Unmarshal(msg.Body, &header); err != nil {
-		return fmt.Errorf("failed to unmarshal message header: %w", err)
+		return ports.NewNonRetriableError(fmt.Errorf("failed to unmarshal message header: %w", err))
 	}
 
 	record := models.EventRecord{
@@ -65,7 +65,7 @@ func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
 		if err := p.repository.Save(ctx, record); err != nil {
 			return fmt.Errorf("failed to save event to repository: %w", err)
 		}
-		return fmt.Errorf("invalid message header")
+		return ports.NewNonRetriableError(fmt.Errorf("invalid message header"))
 	}
 
 	_, err := p.schemaRegistry.Unmarshal(header.EventType, header.SchemaVersion, header.Body)
@@ -74,7 +74,7 @@ func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
 		if err := p.repository.Save(ctx, record); err != nil {
 			return fmt.Errorf("failed to save event to repository: %w", err)
 		}
-		return fmt.Errorf("failed to unmarshal event body: %w", err)
+		return ports.NewNonRetriableError(fmt.Errorf("failed to unmarshal event body: %w", err))
 	}
 
 	if err := p.repository.Save(ctx, record); err != nil {
