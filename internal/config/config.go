@@ -27,6 +27,7 @@ type sqsConfig struct {
 	QueueURL    string `mapstructure:"SQS_QUEUE_URL" default:"http://localhost:4566/000000000000/events-main"`
 	MaxMessages int32  `mapstructure:"SQS_MAX_MESSAGES" default:"5"`
 	WaitTimeSec int32  `mapstructure:"SQS_WAIT_TIME_SEC" default:"10"`
+	MaxRetries  int32  `mapstructure:"SQS_MAX_RETRIES" default:"5"`
 }
 
 type dynamoDBConfig struct {

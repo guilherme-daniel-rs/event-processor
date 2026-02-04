@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -77,6 +78,38 @@ func TestConsumer_Receive(t *testing.T) {
 		msgs, err := consumer.Receive(context.Background())
 		assert.Error(t, err)
 		assert.Nil(t, msgs)
+	})
+
+	t.Run("max_retries_reached_dlq_trigger", func(t *testing.T) {
+		mockClient := new(MockSQSClient)
+		consumer := NewSqsConsumer(mockClient, Options{QueueURL: "test-queue", MaxRetries: 3})
+
+		mockClient.On("ReceiveMessage", mock.Anything, mock.Anything, mock.Anything).Return(&sqs.ReceiveMessageOutput{
+			Messages: []types.Message{
+				{
+					MessageId:     aws.String("msg-1"),
+					ReceiptHandle: aws.String("handle-1"),
+					Attributes: map[string]string{
+						"ApproximateReceiveCount": "3",
+					},
+				},
+			},
+		}, nil).Once()
+
+		mockClient.On("ChangeMessageVisibility", mock.Anything, mock.MatchedBy(func(input *sqs.ChangeMessageVisibilityInput) bool {
+			return *input.ReceiptHandle == "handle-1" && input.VisibilityTimeout == 0
+		}), mock.Anything).Return(&sqs.ChangeMessageVisibilityOutput{}, nil).Once()
+
+		mockClient.On("ReceiveMessage", mock.Anything, mock.Anything, mock.Anything).Return(&sqs.ReceiveMessageOutput{}, nil).Maybe()
+
+		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+		defer cancel()
+
+		_ = consumer.Read(ctx, func(ctx context.Context, msg ports.Message) error {
+			return errors.New("persistent failure")
+		})
+
+		mockClient.AssertExpectations(t)
 	})
 }
 

@@ -18,12 +18,14 @@ type Consumer struct {
 	queueURL    string
 	maxMessages int32
 	waitTimeSec int32
+	maxRetries  int32
 }
 
 type Options struct {
 	QueueURL    string
 	MaxMessages int32
 	WaitTimeSec int32
+	MaxRetries  int32
 }
 
 type nackOptions struct {
@@ -36,6 +38,7 @@ func NewSqsConsumer(client SQSClient, opts Options) *Consumer {
 		queueURL:    opts.QueueURL,
 		maxMessages: opts.MaxMessages,
 		waitTimeSec: opts.WaitTimeSec,
+		maxRetries:  opts.MaxRetries,
 	}
 }
 
@@ -69,7 +72,7 @@ func (c *Consumer) Ack(ctx context.Context, msg ports.Message) error {
 }
 
 func (c *Consumer) Nack(ctx context.Context, msg ports.Message, opts nackOptions) error {
-	if opts.DelayBeforeRetrySeconds <= 0 {
+	if opts.DelayBeforeRetrySeconds < 0 {
 		return nil
 	}
 	_, err := c.client.ChangeMessageVisibility(ctx, &sqs.ChangeMessageVisibilityInput{
@@ -113,6 +116,14 @@ func (c *Consumer) Read(ctx context.Context, process func(ctx context.Context, m
 				if ports.IsNonRetriable(err) {
 					fmt.Printf("Message ID %s is non-retriable, acknowledging.\n", m.ID)
 					_ = c.Ack(ctx, m)
+					return
+				}
+
+				if c.maxRetries > 0 && int32(m.ReceiveCount) >= c.maxRetries {
+					fmt.Printf("Message ID %s reached max retries (%d), nacking immediately to trigger DLQ logic.\n", m.ID, m.ReceiveCount)
+					_ = c.Nack(ctx, m, nackOptions{
+						DelayBeforeRetrySeconds: 0,
+					})
 					return
 				}
 
