@@ -65,22 +65,14 @@ func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
 
 	if !header.IsValid() {
 		logging.Append(ctx, "Header validation failed")
-		record.Status = "failed"
-		if err := p.repository.Save(ctx, record); err != nil {
-			return fmt.Errorf("failed to save event to repository: %w", err)
-		}
-		return ports.NewNonRetriableError(fmt.Errorf("invalid message header"))
+		return p.saveFailure(ctx, record, fmt.Errorf("invalid message header"))
 	}
 	logging.Append(ctx, "Header validated")
 
 	_, err := p.schemaRegistry.Unmarshal(header.EventType, header.SchemaVersion, header.Body)
 	if err != nil {
 		logging.Append(ctx, "Body unmarshal failed: %v", err)
-		record.Status = "failed"
-		if err := p.repository.Save(ctx, record); err != nil {
-			return fmt.Errorf("failed to save event to repository: %w", err)
-		}
-		return ports.NewNonRetriableError(fmt.Errorf("failed to unmarshal event body: %w", err))
+		return p.saveFailure(ctx, record, fmt.Errorf("failed to unmarshal event body: %w", err))
 	}
 	logging.Append(ctx, "Body unmarshaled and validated via registry")
 
@@ -90,4 +82,12 @@ func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
 	logging.Append(ctx, "Event saved successfully to repository")
 
 	return nil
+}
+
+func (p *Processor) saveFailure(ctx context.Context, record models.EventRecord, err error) error {
+	record.Status = "failed"
+	if saveErr := p.repository.Save(ctx, record); saveErr != nil {
+		return fmt.Errorf("failed to save failed event record: %w (original error: %v)", saveErr, err)
+	}
+	return ports.NewNonRetriableError(err)
 }
