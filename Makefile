@@ -13,8 +13,8 @@ BINARY_NAME = $(APP_NAME)
 BINARY_UNIX = $(APP_NAME)_unix
 
 build:
-	$(GOBUILD) -o bin/$(BINARY_NAME) cmd/$(BINARY_NAME)/main.go
-	$(GOBUILD) -o bin/$(BINARY_UNIX) cmd/$(BINARY_UNIX)/main.go
+	$(GOBUILD) -o bin/$(BINARY_NAME) ./cmd/worker/main.go
+	$(GOBUILD) -o bin/$(BINARY_UNIX) ./cmd/worker/main.go
 
 test:
 	$(GOTEST) $(TEST_DIR)
