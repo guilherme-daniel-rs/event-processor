@@ -23,3 +23,11 @@ server.test.pem.key
 .env.local
 .env.*.local
 .env-*
+
+# Tests
+/coverage
+coverage.out
+coverage.html
+
+# Builds
+/bin
