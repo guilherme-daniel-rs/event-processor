@@ -19,6 +19,8 @@ func NewSchemaRegistry() *SchemaRegistry {
 	}
 
 	registry.Register("payment.processed", "v1", func() Schema { return &PaymentProcessedV1{} })
+	registry.Register("user.created", "v1", func() Schema { return &UserCreatedV1{} })
+	registry.Register("order.placed", "v1", func() Schema { return &OrderPlacedV1{} })
 
 	return registry
 }
