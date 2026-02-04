@@ -28,4 +28,4 @@ run:
 
 send-events:
 	@echo "Sending events..."
-	go run cmd/send-events/main.go $(ARGS)
+	go run cmd/send-events/main.go -count=100 -type=payment.processed
