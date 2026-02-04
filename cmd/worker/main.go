@@ -9,7 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	dynamodbadapter "github.com/guilherme-daniel-rs/event-processor/internal/adapters/dynamodb"
 	"github.com/guilherme-daniel-rs/event-processor/internal/adapters/sqsconsumer"
 	"github.com/guilherme-daniel-rs/event-processor/internal/app"
 	"github.com/guilherme-daniel-rs/event-processor/internal/config"
@@ -37,13 +39,18 @@ func main() {
 		o.BaseEndpoint = aws.String(localstackEndpoint)
 	})
 
+	dynamoDBClient := dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
+		o.BaseEndpoint = aws.String(localstackEndpoint)
+	})
+
 	sqsConsumer := sqsconsumer.NewSqsConsumer(sqsClient, sqsconsumer.Options{
 		QueueURL:    config.Get().SQS.QueueURL,
 		MaxMessages: config.Get().SQS.MaxMessages,
 		WaitTimeSec: config.Get().SQS.WaitTimeSec,
 	})
 
-	processor := app.NewProcessor()
+	eventRepository := dynamodbadapter.NewEventRepository(dynamoDBClient)
+	processor := app.NewProcessor(eventRepository)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

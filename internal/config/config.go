@@ -28,18 +28,6 @@ type sqsConfig struct {
 	WaitTimeSec int32  `mapstructure:"SQS_WAIT_TIME_SEC" default:"10"`
 }
 
-func getMappedEnvs(configStruct reflect.Type) []string {
-	var envs []string
-	for i := 0; i < configStruct.NumField(); i++ {
-		field := configStruct.Field(i)
-		envTag := field.Tag.Get("mapstructure")
-		if envTag != "" {
-			envs = append(envs, envTag)
-		}
-	}
-	return envs
-}
-
 func setDefaultValues(configStruct reflect.Type) {
 	for i := 0; i < configStruct.NumField(); i++ {
 		field := configStruct.Field(i)
