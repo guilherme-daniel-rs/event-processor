@@ -1,4 +1,6 @@
-FROM golang:1.24 AS builder
+FROM golang:1.24-alpine AS builder
+
+RUN adduser -D -u 10001 runner
 
 WORKDIR /app
 
@@ -12,6 +14,10 @@ RUN go build -ldflags="-s -w" -o /app/worker cmd/worker/main.go
 
 FROM scratch
 
+COPY --from=builder /etc/passwd /etc/passwd
+
 COPY --from=builder /app/worker /worker
+
+USER runner
 
 ENTRYPOINT ["/worker"]

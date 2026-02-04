@@ -12,12 +12,12 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582e3778ac464d271261ea0e6e22f2833f48
         with:
           go-version: '1.24'
           cache: true
@@ -29,7 +29,7 @@ jobs:
         run: make coverage
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarcloud-github-action@2a0e41f71a94ed2d34190c4228c2e6f477002018
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -43,10 +43,10 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
 
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9f1f0a8c2323a35b131cd653b469cc911b3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@b96e037d45749ed4e04043224b52fe018bc79679
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
@@ -63,7 +63,7 @@ jobs:
             latest
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@056524025d2c0b05b3fdf10996ec09193134ca6d
         with:
           context: .
           push: true

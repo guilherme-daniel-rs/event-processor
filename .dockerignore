@@ -1,0 +1,12 @@
+.git
+.github
+bin
+coverage
+dist
+node_modules
+.DS_Store
+*.test
+*.out
+Dockerfile
+.dockerignore
+vendor
