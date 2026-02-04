@@ -2,7 +2,6 @@ package sqsconsumer
 
 import (
 	"context"
-	"fmt"
 	"maps"
 	"strconv"
 	"sync"
@@ -10,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/guilherme-daniel-rs/event-processor/internal/logging"
 	"github.com/guilherme-daniel-rs/event-processor/internal/ports"
 )
 
@@ -106,21 +106,24 @@ func (c *Consumer) Read(ctx context.Context, process func(ctx context.Context, m
 			go func(m ports.Message) {
 				defer wg.Done()
 
-				if err := process(ctx, m); err == nil {
+				tCtx := logging.WithTrace(ctx, m.ID)
+				logging.Append(tCtx, "Started processing message (attempt %d)", m.ReceiveCount)
+
+				err := process(tCtx, m)
+
+				logging.Flush(tCtx, err)
+
+				if err == nil {
 					_ = c.Ack(ctx, m)
 					return
 				}
 
-				fmt.Printf("Error processing message ID %s: %v\n", m.ID, err)
-
 				if ports.IsNonRetriable(err) {
-					fmt.Printf("Message ID %s is non-retriable, acknowledging.\n", m.ID)
 					_ = c.Ack(ctx, m)
 					return
 				}
 
 				if c.maxRetries > 0 && int32(m.ReceiveCount) >= c.maxRetries {
-					fmt.Printf("Message ID %s reached max retries (%d), nacking immediately to trigger DLQ logic.\n", m.ID, m.ReceiveCount)
 					_ = c.Nack(ctx, m, nackOptions{
 						DelayBeforeRetrySeconds: 0,
 					})
@@ -129,7 +132,6 @@ func (c *Consumer) Read(ctx context.Context, process func(ctx context.Context, m
 
 				delay := calculateBackoffDelay(int32(m.ReceiveCount))
 
-				fmt.Printf("Retrying message ID %s in %d seconds (attempt %d)\n", m.ID, delay, m.ReceiveCount)
 				_ = c.Nack(ctx, m, nackOptions{
 					DelayBeforeRetrySeconds: delay,
 				})

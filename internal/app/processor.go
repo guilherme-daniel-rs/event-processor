@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/guilherme-daniel-rs/event-processor/internal/domain/events"
 	"github.com/guilherme-daniel-rs/event-processor/internal/domain/models"
+	"github.com/guilherme-daniel-rs/event-processor/internal/logging"
 	"github.com/guilherme-daniel-rs/event-processor/internal/ports"
 )
 
@@ -48,6 +49,7 @@ func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
 	if err := json.Unmarshal(msg.Body, &header); err != nil {
 		return ports.NewNonRetriableError(fmt.Errorf("failed to unmarshal message header: %w", err))
 	}
+	logging.Append(ctx, "Header unmarshaled successfully for event %s", header.EventID)
 
 	record := models.EventRecord{
 		ID:            uuid.New().String(),
@@ -59,27 +61,33 @@ func (p *Processor) Process(ctx context.Context, msg ports.Message) error {
 		Status:        "processed",
 		Body:          string(header.Body),
 	}
+	logging.Append(ctx, "Record initialized for tenant %s", record.TenantID)
 
 	if !header.IsValid() {
+		logging.Append(ctx, "Header validation failed")
 		record.Status = "failed"
 		if err := p.repository.Save(ctx, record); err != nil {
 			return fmt.Errorf("failed to save event to repository: %w", err)
 		}
 		return ports.NewNonRetriableError(fmt.Errorf("invalid message header"))
 	}
+	logging.Append(ctx, "Header validated")
 
 	_, err := p.schemaRegistry.Unmarshal(header.EventType, header.SchemaVersion, header.Body)
 	if err != nil {
+		logging.Append(ctx, "Body unmarshal failed: %v", err)
 		record.Status = "failed"
 		if err := p.repository.Save(ctx, record); err != nil {
 			return fmt.Errorf("failed to save event to repository: %w", err)
 		}
 		return ports.NewNonRetriableError(fmt.Errorf("failed to unmarshal event body: %w", err))
 	}
+	logging.Append(ctx, "Body unmarshaled and validated via registry")
 
 	if err := p.repository.Save(ctx, record); err != nil {
 		return fmt.Errorf("failed to save event to repository: %w", err)
 	}
+	logging.Append(ctx, "Event saved successfully to repository")
 
 	return nil
 }

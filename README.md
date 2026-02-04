@@ -86,6 +86,3 @@ The project is configured with **GitHub Actions**:
 - **Build/Test:** Every PR runs tests and checks the build.
 - **SonarCloud:** Quality analysis and coverage checks.
 - **Docker:** On push to `main`, it builds a new image and pushes it to **GHCR** (GitHub Container Registry).
-
----
-Built with ❤️ by [guilherme-daniel-rs](https://github.com/guilherme-daniel-rs)
